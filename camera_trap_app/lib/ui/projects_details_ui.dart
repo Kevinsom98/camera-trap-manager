@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../models/db_model.dart';
 import '../services/helper_service.dart';
+import 'package:drift/drift.dart' as dr;
 
 
 class ProjectDetailScreen extends StatefulWidget {
@@ -39,6 +40,69 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       _isLoading = false;
     });
   }
+
+  void _showEditTrapDialog(CameraTrap trap) {
+  final nameController = TextEditingController(text: trap.trapName);
+  final envController = TextEditingController(text: trap.envConditions);
+  final compassController = TextEditingController(text: trap.compassDirection);
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Edit Metadata: ${trap.trapName}'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Trap Name/Identifier')),
+            TextField(controller: compassController, decoration: const InputDecoration(labelText: 'Bearing (e.g., NW, 310°)')),
+            TextField(controller: envController, decoration: const InputDecoration(labelText: 'Environmental Conditions')),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        ElevatedButton(
+          onPressed: () async {
+            await _dbService.updateCameraTrapRecord(
+              trap.id,
+              CameraTrapsCompanion(
+                trapName: dr.Value(nameController.text.trim()),
+                compassDirection: dr.Value(compassController.text.trim()),
+                envConditions: dr.Value(envController.text.trim()),
+              ),
+            );
+            Navigator.pop(context);
+            _loadTraps(); // Call your existing detail reloader logic function
+          },
+          child: const Text('Update'),
+        )
+      ],
+    ),
+  );
+}
+
+void _showDeleteTrapConfirmation(CameraTrap trap) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Remove Installation Record?'),
+      content: Text('Are you sure you want to remove ${trap.trapName}? Photos linked to this log will be cleared from the deployment map database entries.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () async {
+            await _dbService.deleteCameraTrapRecord(trap.id);
+            Navigator.pop(context);
+            _loadTraps();
+          },
+          child: const Text('Confirm Remove', style: TextStyle(color: Colors.white)),
+        )
+      ],
+    ),
+  );
+}
 
   Future<void> _exportExcel() async {
     if (_trapsWithPhotos.isEmpty) {
@@ -190,38 +254,25 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
                     return Card(
                       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      child: ExpansionTile(
-                        leading: const Icon(Icons.pin_drop, color: Colors.blueGrey),
-                        title: Text(trap.trapName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('Accuracy Bound: ±${trap.gpsAccuracy.toStringAsFixed(1)}m'),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Coordinates: ${trap.latitude}, ${trap.longitude}'),
-                                Text('Operator: ${trap.deployedBy}'),
-                                Text('Direction Matrix: ${trap.compassDirection}'),
-                                Text('Environment Notes: ${trap.envConditions}'),
-                                Text('Deployment Time: ${trap.dateTimeDeployed.toString().split('.')[0]}'),
-                                const SizedBox(height: 10),
-                                photos.isEmpty
-                                    ? const Text('No images registered.', style: TextStyle(color: Colors.grey))
-                                    : GridView.builder(
-                                        shrinkWrap: true,
-                                        physics: const NeverScrollableScrollPhysics(),
-                                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, crossAxisSpacing: 4),
-                                        itemCount: photos.length,
-                                        itemBuilder: (ctx, pIdx) {
-                                          return Image.file(File(photos[pIdx].localFilePath), fit: BoxFit.cover);
-                                        },
-                                      ),
-                              ],
-                            ),
-                          )
-                        ],
-                      ),
+                      child: ListTile(
+  leading: const CircleAvatar(child: Icon(Icons.camera_alt)),
+  title: Text(trap.trapName, style: const TextStyle(fontWeight: FontWeight.bold)),
+  subtitle: Text('Operator ID Ref: ${trap.trapName} | Dir: ${trap.compassDirection}'),
+  // NEW TRAP ADJUSTMENT BUTTONS
+  trailing: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      IconButton(
+        icon: const Icon(Icons.edit_note, color: Colors.blueGrey),
+        onPressed: () => _showEditTrapDialog(trap),
+      ),
+      IconButton(
+        icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
+        onPressed: () => _showDeleteTrapConfirmation(trap),
+      ),
+    ],
+  ),
+),
                     );
                   },
                 ),

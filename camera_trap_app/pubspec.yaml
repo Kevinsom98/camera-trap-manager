@@ -52,6 +52,10 @@ dependencies:
   permission_handler: ^11.3.1
   flutter_map: ^8.3.1
   latlong2: ^0.10.1
+  flutter_map_cache: ^1.5.2 # Auto-caches tiles to local storage as you pan around
+  dio: ^5.5.0               # Required by flutter_map_cache to download tiles
+  dio_cache_interceptor_file_store: ^1.0.2
+
 
 dev_dependencies:
   flutter_test:

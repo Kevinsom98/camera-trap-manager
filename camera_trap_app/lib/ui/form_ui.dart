@@ -94,7 +94,7 @@ Future<void> _captureGPS() async {
       Position position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.bestForNavigation,
-          timeLimit: Duration(seconds: 15),
+          timeLimit: Duration(seconds: 30),
         ),
       );
       setState(() => _currentPosition = position);

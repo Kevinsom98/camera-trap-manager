@@ -65,3 +65,4 @@ class AppDatabase extends _$AppDatabase {
     return driftDatabase(name: 'camera_trap_database');
   }
 }
+

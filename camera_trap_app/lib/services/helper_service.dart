@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import '../models/db_model.dart'; // Import your new Drift AppDatabase file
 
+
 class DriftService {
   // Singleton pattern to ensure a single connection across all screens
   static final DriftService _instance = DriftService._internal();
@@ -15,6 +16,23 @@ class DriftService {
   Future<int> saveProject(ProjectFoldersCompanion project) async {
     return await db.into(db.projectFolders).insert(project);
   }
+
+  Future<int> updateProjectFolder(int id, ProjectFoldersCompanion updatedFolder) async {
+  return await (db.update(db.projectFolders)..where((t) => t.id.equals(id))).write(updatedFolder);
+}
+
+Future<int> deleteProjectFolder(int id) async {
+  return await (db.delete(db.projectFolders)..where((t) => t.id.equals(id))).go();
+}
+
+// Camera Trap Adjustments
+Future<int> updateCameraTrapRecord(int id, CameraTrapsCompanion updatedTrap) async {
+  return await (db.update(db.cameraTraps)..where((t) => t.id.equals(id))).write(updatedTrap);
+}
+
+Future<int> deleteCameraTrapRecord(int id) async {
+  return await (db.delete(db.cameraTraps)..where((t) => t.id.equals(id))).go();
+}
 
   Future<List<ProjectFolder>> getAllProjects() async {
     return await (db.select(db.projectFolders)
